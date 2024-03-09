@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/fs"
 	"log"
@@ -13,7 +14,44 @@ import (
 	"github.com/kr/pretty"
 )
 
+type Var struct {
+	Name    string `json:"name"`
+	Default string `json:"default"`
+}
+
+type Config struct {
+	Name string `json:"name"`
+	Vars []Var  `json:"vars"`
+}
+
+func getVars(config *Config) map[string]string {
+	res := make(map[string]string)
+
+	for _, v := range config.Vars {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Printf("Enter '%s': ", v.Name)
+		text, _ := reader.ReadString('\n')
+		text = strings.TrimSpace(text)
+
+		res[v.Name] = text
+	}
+
+	return res
+}
+
 func main() {
+	config := Config{
+		Name: "test",
+		Vars: []Var{
+			{
+				Name:    "projectName",
+				Default: "",
+			},
+		},
+	}
+
+	vars := getVars(&config)
+
 	fmt.Println("Hello World")
 
 	dir := "./work/test"
@@ -72,8 +110,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		templ.Execute(f, map[string]any{
-			"wooh": "Hello from go",
-		})
+		templ.Execute(f, vars)
 	}
 }
