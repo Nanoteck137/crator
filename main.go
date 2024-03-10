@@ -1,115 +1,123 @@
 package main
 
 import (
-	"bufio"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
-	"text/template"
 
 	"github.com/kr/pretty"
+	"github.com/nanoteck137/crator/cmd"
+	"github.com/nanoteck137/crator/template"
 )
 
-type Var struct {
-	Name    string `json:"name"`
-	Default string `json:"default"`
+type AppConfig struct {
+	Templates string `json:"templates"`
 }
 
-type Config struct {
-	Name string `json:"name"`
-	Vars []Var  `json:"vars"`
+func getConfigPath() string {
+	return os.ExpandEnv("$HOME/.config/crator/config.json")
 }
 
-func getVars(config *Config) map[string]string {
-	res := make(map[string]string)
-
-	for _, v := range config.Vars {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("Enter '%s': ", v.Name)
-		text, _ := reader.ReadString('\n')
-		text = strings.TrimSpace(text)
-
-		res[v.Name] = text
+func getDefaultTemplateDir() string {
+	dataHome, exists := os.LookupEnv("XDG_DATA_HOME")
+	if exists {
+		return dataHome + "/crator/templates"
 	}
 
-	return res
+	return os.ExpandEnv("$HOME/.local/share/crator/templates")
+}
+
+func readConfig() (*AppConfig, error) {
+	p := getConfigPath()
+
+	data, err := os.ReadFile(p)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return &AppConfig{
+				Templates: getDefaultTemplateDir(),
+			}, nil
+		}
+
+		return nil, err
+	}
+
+	var config AppConfig
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	if config.Templates == "" {
+		config.Templates = getDefaultTemplateDir()
+	}
+
+	return &config, nil
 }
 
 func main() {
-	config := Config{
-		Name: "test",
-		Vars: []Var{
-			{
-				Name:    "projectName",
-				Default: "",
-			},
-		},
+	cmd.Execute()
+
+	return
+
+	config, err := readConfig()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	vars := getVars(&config)
+	pretty.Println(config)
 
-	fmt.Println("Hello World")
+	err = os.MkdirAll(config.Templates, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	dir := "./work/test"
-	dir = filepath.Clean(dir)
+	var paths []string
 
-	var dirs []string
-	var files []string
-
-	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
-		fmt.Printf("path: %v\n", p)
-
-		if d.IsDir() && p != dir {
-			fmt.Println(d.Info())
-			dirs = append(dirs, strings.TrimPrefix(p, dir+"/"))
+	err = filepath.WalkDir(filepath.Clean(config.Templates), func(p string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
 		}
 
-		if !d.IsDir() {
-			files = append(files, p)
+		name := d.Name()
+		if name == "crator.json" {
+			paths = append(paths, p)
+			return filepath.SkipDir
 		}
 
 		return nil
 	})
 
-	if err != nil {
-		log.Fatal(err)
+	type Template struct {
+		p string
+		config template.Config
 	}
 
-	pretty.Println(files)
+	var templates []Template
 
-	dst := "./work/dest"
-	for _, dir := range dirs {
-		p := path.Join(dst, dir)
-		err := os.MkdirAll(p, 0755)
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		var templateConfig template.Config
+		err = json.Unmarshal(data,&templateConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("Template: ", templateConfig.Name)
+		templates = append(templates, Template{
+			p:      p,
+			config: templateConfig,
+		})
 	}
 
-	for _, file := range files {
-		p := path.Join(dst, strings.TrimPrefix(file, dir+"/"))
-		fmt.Printf("p: %v\n", p)
-
-		data, err := os.ReadFile(file)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		f, err := os.Create(p)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-
-		templ, err := template.New(file).Parse(string(data))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		templ.Execute(f, vars)
-	}
+	templ := templates[0]
+	p := filepath.Dir(templ.p)
+	template.Execute(&templ.config, p, "./work/test")
 }
