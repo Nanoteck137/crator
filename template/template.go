@@ -2,6 +2,7 @@ package template
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -10,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/nanoteck137/crator/app"
 )
 
 type Var struct {
@@ -42,7 +45,7 @@ func getVars(config *Config) map[string]string {
 	return res
 }
 
-func Execute(config *Config, src string, dst string) {
+func Execute(config *Config, src string, dst string) error {
 	vars := getVars(config)
 
 	var dirs []string
@@ -97,4 +100,58 @@ func Execute(config *Config, src string, dst string) {
 
 		templ.Execute(f, vars)
 	}
+
+	return nil
+}
+
+type Template struct {
+	Base   string
+	Config Config
+}
+
+func (t *Template) Execute(dst string) error {
+	return Execute(&t.Config, t.Base, dst)
+}
+
+func GetAvailable(config *app.AppConfig) ([]Template, error) {
+	var paths []string
+	err := filepath.WalkDir(filepath.Clean(config.Templates), func(p string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
+		}
+
+		name := d.Name()
+		if name == "crator.json" {
+			paths = append(paths, p)
+			return filepath.SkipDir
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var templates []Template
+
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var templateConfig Config
+		err = json.Unmarshal(data, &templateConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		templates = append(templates, Template{
+			Base:   filepath.Dir(p),
+			Config: templateConfig,
+		})
+	}
+
+	return templates, nil
 }
