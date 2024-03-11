@@ -53,7 +53,6 @@ func Execute(config *Config, src string, dst string) error {
 
 	err := filepath.WalkDir(filepath.Clean(src), func(p string, d fs.DirEntry, err error) error {
 		if d.IsDir() && p != src {
-			fmt.Println(d.Info())
 			dirs = append(dirs, strings.TrimPrefix(p, src+"/"))
 		}
 
@@ -77,10 +76,7 @@ func Execute(config *Config, src string, dst string) error {
 	}
 
 	for _, file := range files {
-		fmt.Printf("file: %v\n", file)
-		fmt.Printf("src: %v\n", src)
 		p := path.Join(dst, strings.TrimPrefix(file, src+"/"))
-		fmt.Printf("p: %v\n", p)
 
 		data, err := os.ReadFile(file)
 		if err != nil {

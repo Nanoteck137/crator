@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -18,9 +17,6 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		templateName := args[0]
 		output, _ := cmd.Flags().GetString("output")
-
-		fmt.Printf("templateName: %v\n", templateName)
-		fmt.Printf("output: %v\n", output)
 
 		config, err := app.ReadConfig()
 		if err != nil {
