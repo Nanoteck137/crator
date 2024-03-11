@@ -13,6 +13,7 @@ import (
 
 var listCmd = &cobra.Command{
 	Use: "list",
+	Short: "List all available templates",
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := app.ReadConfig()
 		if err != nil {
