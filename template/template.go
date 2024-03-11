@@ -22,7 +22,6 @@ type Var struct {
 }
 
 type Config struct {
-	Name string `json:"name"`
 	Vars []Var  `json:"vars"`
 }
 
@@ -101,6 +100,7 @@ func Execute(config *Config, src string, dst string) error {
 }
 
 type Template struct {
+	Name   string
 	Base   string
 	Config Config
 }
@@ -132,6 +132,8 @@ func GetAvailable(config *app.Config) ([]Template, error) {
 	var templates []Template
 
 	for _, p := range paths {
+		name := filepath.Dir(strings.TrimPrefix(p, config.Templates + "/"))
+
 		data, err := os.ReadFile(p)
 		if err != nil {
 			log.Fatal(err)
@@ -144,6 +146,7 @@ func GetAvailable(config *app.Config) ([]Template, error) {
 		}
 
 		templates = append(templates, Template{
+			Name:   name,
 			Base:   filepath.Dir(p),
 			Config: templateConfig,
 		})

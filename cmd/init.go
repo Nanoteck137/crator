@@ -36,7 +36,7 @@ var initCmd = &cobra.Command{
 		var templ *template.Template
 
 		for _, t := range availableTemplates {
-			if t.Config.Name == templateName {
+			if t.Name == templateName {
 				templ = &t
 			}
 		}

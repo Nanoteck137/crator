@@ -32,7 +32,7 @@ var listCmd = &cobra.Command{
 
 		fmt.Println("Available Templates:")
 		for _, templ := range availableTemplates {
-			fmt.Printf(" - %s\n", templ.Config.Name)
+			fmt.Printf(" - %s\n", templ.Name)
 		}
 	},
 }
