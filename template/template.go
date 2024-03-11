@@ -2,7 +2,6 @@ package template
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -13,16 +12,17 @@ import (
 	"text/template"
 
 	"github.com/nanoteck137/crator/app"
+	"github.com/pelletier/go-toml/v2"
 )
 
 type Var struct {
-	Name    string `json:"name"`
-	Prompt  string `json:"prompt"`
-	Default string `json:"default"`
+	Name    string `toml:"name"`
+	Prompt  string `toml:"prompt"`
+	Default string `toml:"default"`
 }
 
 type Config struct {
-	Vars []Var `json:"vars"`
+	Vars []Var `toml:"vars"`
 }
 
 func getVars(config *Config) map[string]string {
@@ -62,7 +62,7 @@ func Execute(config *Config, src string, dst string) error {
 			dirs = append(dirs, strings.TrimPrefix(p, src+"/"))
 		}
 
-		if !d.IsDir() && d.Name() != "crator.json" {
+		if !d.IsDir() && d.Name() != app.TemplateConfigName {
 			files = append(files, p)
 		}
 
@@ -124,7 +124,7 @@ func GetAvailable(config *app.Config) ([]Template, error) {
 		}
 
 		name := d.Name()
-		if name == "crator.json" {
+		if name == app.TemplateConfigName {
 			paths = append(paths, p)
 			return filepath.SkipDir
 		}
@@ -147,7 +147,7 @@ func GetAvailable(config *app.Config) ([]Template, error) {
 		}
 
 		var templateConfig Config
-		err = json.Unmarshal(data, &templateConfig)
+		err = toml.Unmarshal(data, &templateConfig)
 		if err != nil {
 			log.Fatal(err)
 		}

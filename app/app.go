@@ -1,17 +1,22 @@
 package app
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
+	"path"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
+const TemplateConfigName = "crator.toml"
+const AppConfigName = "config.toml"
+
 type Config struct {
-	Templates string `json:"templates"`
+	Templates string `toml:"templates"`
 }
 
 func getConfigPath() string {
-	return os.ExpandEnv("$HOME/.config/crator/config.json")
+	return path.Join(os.ExpandEnv("$HOME/.config/crator"), AppConfigName)
 }
 
 func getDefaultTemplateDir() string {
@@ -38,7 +43,7 @@ func ReadConfig() (*Config, error) {
 	}
 
 	var config Config
-	err = json.Unmarshal(data, &config)
+	err = toml.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err
 	}
