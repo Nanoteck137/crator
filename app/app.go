@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-type AppConfig struct {
+type Config struct {
 	Templates string `json:"templates"`
 }
 
@@ -23,13 +23,13 @@ func getDefaultTemplateDir() string {
 	return os.ExpandEnv("$HOME/.local/share/crator/templates")
 }
 
-func ReadConfig() (*AppConfig, error) {
+func ReadConfig() (*Config, error) {
 	p := getConfigPath()
 
 	data, err := os.ReadFile(p)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return &AppConfig{
+			return &Config{
 				Templates: getDefaultTemplateDir(),
 			}, nil
 		}
@@ -37,7 +37,7 @@ func ReadConfig() (*AppConfig, error) {
 		return nil, err
 	}
 
-	var config AppConfig
+	var config Config
 	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err

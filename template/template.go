@@ -113,7 +113,7 @@ func (t *Template) Execute(dst string) error {
 	return Execute(&t.Config, t.Base, dst)
 }
 
-func GetAvailable(config *app.AppConfig) ([]Template, error) {
+func GetAvailable(config *app.Config) ([]Template, error) {
 	var paths []string
 	err := filepath.WalkDir(filepath.Clean(config.Templates), func(p string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
