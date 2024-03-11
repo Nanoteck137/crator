@@ -22,7 +22,7 @@ type Var struct {
 }
 
 type Config struct {
-	Vars []Var  `json:"vars"`
+	Vars []Var `json:"vars"`
 }
 
 func getVars(config *Config) map[string]string {
@@ -50,7 +50,14 @@ func Execute(config *Config, src string, dst string) error {
 	var dirs []string
 	var files []string
 
-	err := filepath.WalkDir(filepath.Clean(src), func(p string, d fs.DirEntry, err error) error {
+	src = filepath.Clean(src)
+
+	err := os.MkdirAll(dst, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
 		if d.IsDir() && p != src {
 			dirs = append(dirs, strings.TrimPrefix(p, src+"/"))
 		}
@@ -132,7 +139,7 @@ func GetAvailable(config *app.Config) ([]Template, error) {
 	var templates []Template
 
 	for _, p := range paths {
-		name := filepath.Dir(strings.TrimPrefix(p, config.Templates + "/"))
+		name := filepath.Dir(strings.TrimPrefix(p, config.Templates+"/"))
 
 		data, err := os.ReadFile(p)
 		if err != nil {
