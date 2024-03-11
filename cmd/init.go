@@ -7,6 +7,7 @@ import (
 
 	"github.com/nanoteck137/crator/app"
 	"github.com/nanoteck137/crator/template"
+	"github.com/nanoteck137/crator/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,6 @@ var initCmd = &cobra.Command{
 
 		fmt.Printf("templateName: %v\n", templateName)
 		fmt.Printf("output: %v\n", output)
-
 
 		config, err := app.ReadConfig()
 		if err != nil {
@@ -47,6 +47,12 @@ var initCmd = &cobra.Command{
 
 		if templ == nil {
 			log.Fatalf("No template with name '%s'", templateName)
+		}
+
+		empty, err := utils.IsDirEmpty(output)
+
+		if err == nil && !empty {
+			log.Fatalf("'%s' is not empty", output)
 		}
 
 		err = templ.Execute(output)
