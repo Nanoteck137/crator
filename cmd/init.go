@@ -10,8 +10,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var createCmd = &cobra.Command{
-	Use: "create <TEMPLATE_NAME>",
+var initCmd = &cobra.Command{
+	Use: "init <TEMPLATE_NAME>",
+	Short: "Initialize with specified template",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		templateName := args[0]
@@ -56,7 +57,7 @@ var createCmd = &cobra.Command{
 }
 
 func init() {
-	createCmd.Flags().StringP("output", "o", ".", "Output of create")
+	initCmd.Flags().StringP("output", "o", ".", "Output of create")
 
-	rootCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(initCmd)
 }
