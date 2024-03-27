@@ -38,6 +38,7 @@ var initCmd = &cobra.Command{
 		for _, t := range availableTemplates {
 			if t.Name == templateName {
 				templ = &t
+				break;
 			}
 		}
 
